@@ -1,7 +1,13 @@
-const tmi = require("tmi.js");
-const winston = require("winston");
-const sqlite3 = require("sqlite3").verbose();
-require("dotenv").config();
+import tmi from "tmi.js";
+import winston from "winston";
+import sqlite3 from "sqlite3";
+import dotenv from "dotenv";
+
+// Initialize dotenv
+dotenv.config();
+
+// Use verbose mode for sqlite3
+const sqlite = sqlite3.verbose();
 
 // Configure logger
 const logger = winston.createLogger({
@@ -24,7 +30,7 @@ const client = new tmi.Client({
 });
 
 // Initialize SQLite database
-const db = new sqlite3.Database("zbrodniarze.db");
+const db = new sqlite.Database("zbrodniarze.db");
 
 // Create tables
 db.serialize(() => {
@@ -34,9 +40,7 @@ db.serialize(() => {
     type TEXT,
     channel TEXT,
     username TEXT,
-    reason TEXT,
-    duration INTEGER,
-    moderator TEXT
+    duration INTEGER
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS messages (
@@ -73,16 +77,9 @@ client.on("timeout", (channel, username, reason, duration, userstate) => {
 
       // Store timeout action
       db.run(
-        `INSERT INTO zbrodniarze (type, channel, username, reason, duration, moderator) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          "timeout",
-          channel,
-          username,
-          reason || "No reason provided",
-          duration,
-          userstate["login"],
-        ]
+        `INSERT INTO zbrodniarze (type, channel, username, duration) 
+         VALUES (?, ?, ?, ?)`,
+        ["timeout", channel, username, duration]
       );
     }
   );
@@ -101,15 +98,9 @@ client.on("ban", (channel, username, reason, userstate) => {
 
       // Store ban action
       db.run(
-        `INSERT INTO zbrodniarze (type, channel, username, reason, moderator) 
-         VALUES (?, ?, ?, ?, ?)`,
-        [
-          "ban",
-          channel,
-          username,
-          reason || "No reason provided",
-          userstate["login"],
-        ]
+        `INSERT INTO zbrodniarze (type, channel, username, duration) 
+         VALUES (?, ?, ?, ?)`,
+        ["ban", channel, username, 0]
       );
     }
   );
