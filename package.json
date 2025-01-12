@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.4.7",
+    "sqlite3": "^5.1.7",
     "tmi.js": "^1.8.5",
     "winston": "^3.17.0"
   }
