@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
+    "dev": "tsc && node dist/index.js",
     "start": "node dist/index.js",
-    "dev": "tsc -w",
     "build": "tsc",
     "db:push": "drizzle-kit push"
   },
