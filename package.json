@@ -17,7 +17,6 @@
     "@libsql/client": "^0.14.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.3",
-    "sqlite3": "^5.1.7",
     "tmi.js": "^1.8.5",
     "winston": "^3.17.0"
   },
