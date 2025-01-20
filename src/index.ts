@@ -34,8 +34,7 @@ client.connect().catch(console.error);
 
 // Store user messages
 client.on("message", async (channel, userstate, message, self) => {
-  if (self) return;
-  if (userstate.username === "streamelements") return;
+  if (self || userstate.username === "streamelements") return;
 
   try {
     await insertMessage(userstate.username ?? "", message);
