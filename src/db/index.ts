@@ -1,17 +1,11 @@
-import { drizzle } from "drizzle-orm/libsql/node";
+import { drizzle } from "drizzle-orm/mysql2";
 import { eq, desc } from "drizzle-orm";
 import { messagesTable, zbrodniarzeTable } from "./schema.js";
 import { config } from "dotenv";
-import { createClient } from "@libsql/client";
 
 config();
 
-const client = createClient({
-  url: process.env.TURSO_DB_URL as string,
-  authToken: process.env.TURSO_AUTH_TOKEN as string,
-});
-
-export const db = drizzle(client);
+export const db = drizzle(process.env.DATABASE_URL as string);
 
 export async function insertMessage(username: string, message: string) {
   return db.insert(messagesTable).values({ username, message });
