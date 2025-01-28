@@ -18,11 +18,13 @@
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.3",
     "mysql2": "^3.12.0",
+    "node-cron": "^3.0.3",
     "tmi.js": "^1.8.5",
     "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
+    "@types/node-cron": "^3.0.11",
     "@types/tmi.js": "^1.8.6",
     "@types/winston": "^2.4.4",
     "drizzle-kit": "^0.30.1",
