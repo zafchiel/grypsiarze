@@ -5,13 +5,13 @@ import { config } from "dotenv";
 
 config();
 
-export const db = drizzle(process.env.DATABASE_URL as string);
+export const db = drizzle(process.env.DATABASE_URL);
 
-export async function insertMessage(username: string, message: string) {
+export async function insertMessage(username, message) {
   return db.insert(messagesTable).values({ username, message });
 }
 
-export async function getMessages(username: string) {
+export async function getMessages(username) {
   return db
     .select()
     .from(messagesTable)
@@ -20,18 +20,13 @@ export async function getMessages(username: string) {
     .limit(5);
 }
 
-export async function insertZbrodniarze(
-  type: string,
-  channel: string,
-  username: string,
-  duration: number
-) {
+export async function insertZbrodniarze(type, channel, username, duration) {
   return db
     .insert(zbrodniarzeTable)
     .values({ type, channel, username, duration });
 }
 
-export async function deleteOldMessages(username: string) {
+export async function deleteOldMessages(username) {
   // First get IDs of messages to keep (latest 5)
   const latestMessages = await db
     .select({ id: messagesTable.id })
@@ -53,9 +48,7 @@ export async function deleteOldMessages(username: string) {
     );
 }
 
-export async function deleteOldMessagesExceptZbrodniarze(
-  hours: number
-): Promise<void> {
+export async function deleteOldMessagesExceptZbrodniarze(hours) {
   const hourAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
 
   await db
@@ -74,7 +67,7 @@ export async function deleteOldMessagesExceptZbrodniarze(
 }
 
 // Function to update daily stats when new ban/timeout is added
-export async function incrementDailyStat(type: "ban" | "timeout") {
+export async function incrementDailyStat(type) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 

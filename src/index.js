@@ -30,7 +30,7 @@ const client = new tmi.Client({
     username: process.env.TWITCH_USERNAME,
     password: process.env.TWITCH_OAUTH_TOKEN,
   },
-  channels: [process.env.CHANNEL_NAME as string],
+  channels: [process.env.CHANNEL_NAME],
 });
 
 // Connect to Twitch

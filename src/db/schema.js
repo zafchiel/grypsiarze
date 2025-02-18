@@ -22,12 +22,3 @@ export const dailyStatsTable = mysqlTable("daily_stats", {
   timeouts: int("timeouts").notNull().default(0),
   bans: int("bans").notNull().default(0),
 });
-
-export type InsertZbrodniarz = typeof zbrodniarzeTable.$inferInsert;
-export type SelectZbrodniarz = typeof zbrodniarzeTable.$inferSelect;
-
-export type InsertMessage = typeof messagesTable.$inferInsert;
-export type SelectMessage = typeof messagesTable.$inferSelect;
-
-export type InsertDailyStats = typeof dailyStatsTable.$inferInsert;
-export type SelectDailyStats = typeof dailyStatsTable.$inferSelect;

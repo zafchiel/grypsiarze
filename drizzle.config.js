@@ -8,6 +8,6 @@ export default defineConfig({
   out: "./migrations",
   dialect: "mysql",
   dbCredentials: {
-    url: process.env.DATABASE_URL as string,
+    url: process.env.DATABASE_URL,
   },
 });
