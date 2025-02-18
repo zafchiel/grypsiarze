@@ -7,6 +7,7 @@ import {
   insertMessage,
   deleteOldMessages,
   deleteOldMessagesExceptZbrodniarze,
+  incrementDailyStat,
 } from "./db/index.js";
 
 // Initialize dotenv
@@ -51,6 +52,7 @@ client.on("timeout", async (channel, username, reason, duration, userstate) => {
   try {
     await insertZbrodniarze("timeout", channel, username, duration);
     await deleteOldMessages(username);
+    await incrementDailyStat("timeout");
   } catch (error) {
     logger.error(error);
   }
@@ -61,6 +63,7 @@ client.on("ban", async (channel, username, reason, userstate) => {
   try {
     await insertZbrodniarze("ban", channel, username, 0);
     await deleteOldMessages(username);
+    await incrementDailyStat("ban");
   } catch (error) {
     logger.error(error);
   }

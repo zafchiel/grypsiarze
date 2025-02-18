@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import { eq, desc, notInArray, and, sql } from "drizzle-orm";
-import { messagesTable, zbrodniarzeTable } from "./schema.js";
+import { dailyStatsTable, messagesTable, zbrodniarzeTable } from "./schema.js";
 import { config } from "dotenv";
 
 config();
@@ -71,4 +71,35 @@ export async function deleteOldMessagesExceptZbrodniarze(
         )
       )
     );
+}
+
+// Function to update daily stats when new ban/timeout is added
+export async function incrementDailyStat(type: "ban" | "timeout") {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const existingRecord = await db
+    .select()
+    .from(dailyStatsTable)
+    .where(eq(dailyStatsTable.date, today))
+    .limit(1);
+
+  if (existingRecord.length > 0) {
+    // Update existing record
+    return db
+      .update(dailyStatsTable)
+      .set({
+        [type === "ban" ? "bans" : "timeouts"]: sql`${
+          type === "ban" ? dailyStatsTable.bans : dailyStatsTable.timeouts
+        } + 1`,
+      })
+      .where(eq(dailyStatsTable.date, today));
+  } else {
+    // Create new record
+    return db.insert(dailyStatsTable).values({
+      date: today,
+      timeouts: type === "timeout" ? 1 : 0,
+      bans: type === "ban" ? 1 : 0,
+    });
+  }
 }

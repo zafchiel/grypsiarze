@@ -1,10 +1,4 @@
-import {
-  text,
-  mysqlTable,
-  int,
-  index,
-  timestamp,
-} from "drizzle-orm/mysql-core";
+import { text, mysqlTable, int, timestamp, date } from "drizzle-orm/mysql-core";
 
 export const zbrodniarzeTable = mysqlTable("zbrodniarze", {
   id: int("id").primaryKey().autoincrement(),
@@ -15,18 +9,25 @@ export const zbrodniarzeTable = mysqlTable("zbrodniarze", {
   duration: int("duration").notNull(),
 });
 
-export const messagesTable = mysqlTable(
-  "messages",
-  {
-    id: int("id").primaryKey().autoincrement(),
-    username: text("username").notNull(),
-    message: text("message").notNull(),
-    timestamp: timestamp("timestamp").defaultNow(),
-  },
-  (table) => {
-    return {
-      usernameIdx: index("username_idx").on(table.username),
-      timestampIdx: index("timestamp_idx").on(table.timestamp),
-    };
-  }
-);
+export const messagesTable = mysqlTable("messages", {
+  id: int("id").primaryKey().autoincrement(),
+  username: text("username").notNull(),
+  message: text("message").notNull(),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const dailyStatsTable = mysqlTable("daily_stats", {
+  id: int("id").primaryKey().autoincrement(),
+  date: date("date").notNull(),
+  timeouts: int("timeouts").notNull().default(0),
+  bans: int("bans").notNull().default(0),
+});
+
+export type InsertZbrodniarz = typeof zbrodniarzeTable.$inferInsert;
+export type SelectZbrodniarz = typeof zbrodniarzeTable.$inferSelect;
+
+export type InsertMessage = typeof messagesTable.$inferInsert;
+export type SelectMessage = typeof messagesTable.$inferSelect;
+
+export type InsertDailyStats = typeof dailyStatsTable.$inferInsert;
+export type SelectDailyStats = typeof dailyStatsTable.$inferSelect;
