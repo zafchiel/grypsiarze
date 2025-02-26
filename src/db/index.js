@@ -11,13 +11,32 @@ export async function insertMessage(username, message) {
   return db.insert(messagesTable).values({ username, message });
 }
 
-export async function getMessages(username) {
+export function getAllZbrodniarze() {
+  return db
+    .select()
+    .from(zbrodniarzeTable)
+    .orderBy(desc(zbrodniarzeTable.timestamp));
+}
+
+export function getLastMessages(username) {
   return db
     .select()
     .from(messagesTable)
     .where(eq(messagesTable.username, username))
     .orderBy(desc(messagesTable.timestamp))
     .limit(5);
+}
+
+export async function getDailyStats(days = 365) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  return db
+    .select()
+    .from(dailyStatsTable)
+    .where(gte(dailyStatsTable.date, startDate))
+    .orderBy(asc(dailyStatsTable.date));
 }
 
 export async function insertZbrodniarze(type, channel, username, duration) {
