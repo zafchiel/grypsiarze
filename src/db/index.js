@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/mysql2";
-import { eq, desc, notInArray, and, sql } from "drizzle-orm";
+import { eq, desc, notInArray, and, sql, gte, asc } from "drizzle-orm";
 import { dailyStatsTable, messagesTable, zbrodniarzeTable } from "./schema.js";
 import { config } from "dotenv";
 

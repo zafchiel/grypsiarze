@@ -15,6 +15,7 @@ app.get("/zbrodniarze", async (req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(zbrodniarze));
   } catch (error) {
+    console.error(error);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Failed to fetch zbrodniarze" }));
   }
@@ -28,6 +29,7 @@ app.get("/messages/:username", async (req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(messages));
   } catch (error) {
+    console.error(error);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(
       JSON.stringify({ error: `Failed to fetch messages for user ${username}` })
@@ -42,6 +44,7 @@ app.get("/daily-stats", async (req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(stats));
   } catch (error) {
+    console.error(error);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Failed to fetch daily stats" }));
   }
