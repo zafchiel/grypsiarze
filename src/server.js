@@ -5,7 +5,7 @@ import {
   getDailyStats,
 } from "./db/index.js";
 
-const PORT = 3000;
+const PORT = 31457;
 const app = polka();
 
 // Route to get all zbrodniarze
