@@ -47,6 +47,11 @@ app.get("/daily-stats", async (req, res) => {
   }
 });
 
+app.get("/alive", (req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ message: "Server is alive" }));
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
