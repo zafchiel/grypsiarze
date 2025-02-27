@@ -4,9 +4,18 @@ import {
   getLastMessages,
   getDailyStats,
 } from "./db/index.js";
+import cors from "cors";
 
 const PORT = 31457;
 const app = polka();
+
+app.use(
+  cors({
+    origin: ["http://127.0.0.1:5173", "https://glosiciele.pages.dev"],
+    methods: ["GET"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 
 // Route to get all zbrodniarze
 app.get("/zbrodniarze", async (req, res) => {
