@@ -16,10 +16,10 @@ importers:
         version: 16.4.7
       drizzle-orm:
         specifier: ^0.38.4
-        version: 0.38.4(@libsql/client@0.14.0)(mysql2@3.12.0)(sqlite3@5.1.7)
+        version: 0.38.4(@libsql/client@0.14.0)(mysql2@3.13.0)(sqlite3@5.1.7)
       mysql2:
-        specifier: ^3.12.0
-        version: 3.12.0
+        specifier: ^3.13.0
+        version: 3.13.0
       node-cron:
         specifier: ^3.0.3
         version: 3.0.3
@@ -34,8 +34,8 @@ importers:
         version: 3.17.0
     devDependencies:
       '@types/node':
-        specifier: ^22.13.9
-        version: 22.13.9
+        specifier: ^22.13.10
+        version: 22.13.10
       '@types/node-cron':
         specifier: ^3.0.11
         version: 3.0.11
@@ -408,8 +408,8 @@ packages:
     engines: {node: '>=10'}
     deprecated: This functionality has been moved to @npmcli/fs
 
-  '@petamoriken/float16@3.9.1':
-    resolution: {integrity: sha512-j+ejhYwY6PeB+v1kn7lZFACUIG97u90WxMuGosILFsl9d4Ovi0sjk0GlPfoEcx+FzvXZDAfioD+NGnnPamXgMA==}
+  '@petamoriken/float16@3.9.2':
+    resolution: {integrity: sha512-VgffxawQde93xKxT3qap3OH+meZf7VaSB5Sqd4Rqc+FP5alWbpOyan/7tRbOAvynjpG3GpdtAuGU/NdhQpmrog==}
 
   '@polka/url@0.5.0':
     resolution: {integrity: sha512-oZLYFEAzUKyi3SKnXvj32ZCEGH6RDnao7COuCVhDydMS9NrCSVXhM79VaKyP5+Zc33m0QXEd2DN3UkU7OsHcfw==}
@@ -421,8 +421,8 @@ packages:
   '@types/node-cron@3.0.11':
     resolution: {integrity: sha512-0ikrnug3/IyneSHqCBeslAhlK2aBfYek1fGo4bP4QnZPmiqSGRK+Oy7ZMisLWkesffJvQ1cqAcBnJC+8+nxIAg==}
 
-  '@types/node@22.13.9':
-    resolution: {integrity: sha512-acBjXdRJ3A6Pb3tqnw9HZmyR3Fiol3aGxRCK1x3d+6CDAMjl7I649wpSd+yNURCjbOUGu9tqtLKnTGxmK6CyGw==}
+  '@types/node@22.13.10':
+    resolution: {integrity: sha512-I6LPUvlRH+O6VRUqYOcMudhaIdUVWfsjnZavnsraHvpBwaEyMN29ry+0UVJhImYL16xsscu0aske3yA+uPOWfw==}
 
   '@types/tmi.js@1.8.6':
     resolution: {integrity: sha512-LVzNK7AxTMyh9qHLanAQR1o0I9XzfbIcXk85cx85igmCJHHO1Sm71sdhQ8Mj1WmRGzynPIoCXx6mVaFynWbsQw==}
@@ -872,8 +872,8 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
 
-  lru.min@1.1.1:
-    resolution: {integrity: sha512-FbAj6lXil6t8z4z3j0E5mfRlPzxkySotzUHwRXjlpRh10vc6AI6WN62ehZj82VG7M20rqogJ0GLwar2Xa05a8Q==}
+  lru.min@1.1.2:
+    resolution: {integrity: sha512-Nv9KddBcQSlQopmBHXSsZVY5xsdlZkdH/Iey0BlcBYggMd4two7cZnKOK9vmy3nY0O5RGH99z1PCeTpPqszUYg==}
     engines: {bun: '>=1.0.0', deno: '>=1.30.0', node: '>=8.0.0'}
 
   make-fetch-happen@9.1.0:
@@ -937,8 +937,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  mysql2@3.12.0:
-    resolution: {integrity: sha512-C8fWhVysZoH63tJbX8d10IAoYCyXy4fdRFz2Ihrt9jtPILYynFEKUUzpp1U7qxzDc3tMbotvaBH+sl6bFnGZiw==}
+  mysql2@3.13.0:
+    resolution: {integrity: sha512-M6DIQjTqKeqXH5HLbLMxwcK5XfXHw30u5ap6EZmu7QVmcF/gnh2wS/EOiQ4MTbXz/vQeoXrmycPlVRM00WSslg==}
     engines: {node: '>= 8.0'}
 
   named-placeholders@1.1.3:
@@ -1486,7 +1486,7 @@ snapshots:
       rimraf: 3.0.2
     optional: true
 
-  '@petamoriken/float16@3.9.1': {}
+  '@petamoriken/float16@3.9.2': {}
 
   '@polka/url@0.5.0': {}
 
@@ -1495,7 +1495,7 @@ snapshots:
 
   '@types/node-cron@3.0.11': {}
 
-  '@types/node@22.13.9':
+  '@types/node@22.13.10':
     dependencies:
       undici-types: 6.20.0
 
@@ -1509,7 +1509,7 @@ snapshots:
 
   '@types/ws@8.18.0':
     dependencies:
-      '@types/node': 22.13.9
+      '@types/node': 22.13.10
     optional: true
 
   abbrev@1.1.1:
@@ -1689,10 +1689,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.38.4(@libsql/client@0.14.0)(mysql2@3.12.0)(sqlite3@5.1.7):
+  drizzle-orm@0.38.4(@libsql/client@0.14.0)(mysql2@3.13.0)(sqlite3@5.1.7):
     optionalDependencies:
       '@libsql/client': 0.14.0
-      mysql2: 3.12.0
+      mysql2: 3.13.0
       sqlite3: 5.1.7
 
   emoji-regex@8.0.0:
@@ -1822,7 +1822,7 @@ snapshots:
 
   gel@2.0.1:
     dependencies:
-      '@petamoriken/float16': 3.9.1
+      '@petamoriken/float16': 3.9.2
       debug: 4.4.0
       env-paths: 3.0.0
       semver: 7.7.1
@@ -1973,7 +1973,7 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
-  lru.min@1.1.1: {}
+  lru.min@1.1.2: {}
 
   make-fetch-happen@9.1.0:
     dependencies:
@@ -2064,14 +2064,14 @@ snapshots:
 
   ms@2.1.3: {}
 
-  mysql2@3.12.0:
+  mysql2@3.13.0:
     dependencies:
       aws-ssl-profiles: 1.1.2
       denque: 2.1.0
       generate-function: 2.3.1
       iconv-lite: 0.6.3
       long: 5.3.1
-      lru.min: 1.1.1
+      lru.min: 1.1.2
       named-placeholders: 1.1.3
       seq-queue: 0.0.5
       sqlstring: 2.3.3
