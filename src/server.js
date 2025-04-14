@@ -12,7 +12,7 @@ const app = polka();
 app.use(
   cors({
     origin: ["http://127.0.0.1:5173", "https://glosiciele.pages.dev"],
-    methods: ["GET"],
+    methods: ["GET", "HEAD"],
     allowedHeaders: ["Content-Type"],
   })
 );
@@ -60,6 +60,11 @@ app.get("/daily-stats", async (req, res) => {
 });
 
 app.get("/alive", (req, res) => {
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({ message: "Server is alive" }));
+});
+
+app.head("/alive", (req, res) => {
   res.writeHead(200, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ message: "Server is alive" }));
 });
