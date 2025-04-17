@@ -51,7 +51,7 @@ client.on("message", async (channel, userstate, message, self) => {
 client.on("timeout", async (channel, username, reason, duration, userstate) => {
   try {
     await insertZbrodniarze("timeout", channel, username, duration);
-    await deleteOldMessages(username);
+    // await deleteOldMessages(username);
     await incrementDailyStat("timeout");
   } catch (error) {
     logger.error(error);
@@ -62,19 +62,19 @@ client.on("timeout", async (channel, username, reason, duration, userstate) => {
 client.on("ban", async (channel, username, reason, userstate) => {
   try {
     await insertZbrodniarze("ban", channel, username, 0);
-    await deleteOldMessages(username);
+    // await deleteOldMessages(username);
     await incrementDailyStat("ban");
   } catch (error) {
     logger.error(error);
   }
 });
 
-// Configure cron job to run every hour
-cron.schedule("0 * * * *", async () => {
-  try {
-    await deleteOldMessagesExceptZbrodniarze(24); // 24 hours = 1 day
-    logger.info("Cleaned up old messages");
-  } catch (error) {
-    logger.error("Error cleaning up old messages:", error);
-  }
-});
+// Configure cron job to run every 24 hours
+// cron.schedule("0 0 * * *", async () => {
+//   try {
+//     await deleteOldMessagesExceptZbrodniarze(24); // 24 hours = 1 day
+//     logger.info("Cleaned up old messages");
+//   } catch (error) {
+//     logger.error("Error cleaning up old messages:", error);
+//   }
+// });
