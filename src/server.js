@@ -1,7 +1,7 @@
 import polka from "polka";
 import {
   getAllZbrodniarze,
-  getLastMessages,
+  getMessagesBeforaZbrodnia,
   getDailyStats,
 } from "./db/index.js";
 import cors from "cors";
@@ -31,10 +31,15 @@ app.get("/zbrodniarze", async (req, res) => {
 });
 
 // Route to get last messages for a user
-app.get("/messages/:username", async (req, res) => {
-  const { username } = req.params;
+app.get("/messages/:username/:year/:month/:day", async (req, res) => {
+  const { username, year, month, day } = req.params;
   try {
-    const messages = await getLastMessages(username);
+    const messages = await getMessagesBeforaZbrodnia(
+      username,
+      year,
+      month,
+      day
+    );
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(messages));
   } catch (error) {

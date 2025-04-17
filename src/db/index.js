@@ -1,9 +1,13 @@
 import { drizzle } from "drizzle-orm/mysql2";
-import { eq, desc, notInArray, and, sql, gte, asc } from "drizzle-orm";
+import { eq, desc, notInArray, and, sql, gte, asc, lt } from "drizzle-orm";
 import { dailyStatsTable, messagesTable, zbrodniarzeTable } from "./schema.js";
 import { config } from "dotenv";
 
 config();
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set");
+}
 
 export const db = drizzle(process.env.DATABASE_URL);
 
@@ -18,13 +22,37 @@ export function getAllZbrodniarze() {
     .orderBy(desc(zbrodniarzeTable.timestamp));
 }
 
-export function getLastMessages(username) {
+export async function getMessagesBeforaZbrodnia(username, year, month, day) {
+  const zbrodniaTimestamp = await db
+    .select({ timestamp: zbrodniarzeTable.timestamp })
+    .from(zbrodniarzeTable)
+    .where(
+      and(
+        eq(zbrodniarzeTable.username, username),
+        and(
+          gte(zbrodniarzeTable.timestamp, `${year}-${month}-${day} 00:00:00`),
+          lt(zbrodniarzeTable.timestamp, `${year}-${month}-${day + 1} 00:00:00`)
+        )
+      )
+    )
+    .limit(1);
+
+  if (zbrodniaTimestamp.length === 0) {
+    return [];
+  }
+
+  // Fetch 5 messages for the user sent *before* that timestamp
   return db
     .select()
     .from(messagesTable)
-    .where(eq(messagesTable.username, username))
-    .orderBy(desc(messagesTable.timestamp))
-    .limit(5);
+    .where(
+      and(
+        eq(messagesTable.username, username),
+        lt(messagesTable.timestamp, zbrodniaTimestamp) // Messages before the zbrodnia
+      )
+    )
+    .orderBy(desc(messagesTable.timestamp)) // Get the ones closest to the zbrodnia time
+    .limit(5); // Limit to 10 messages
 }
 
 export async function getDailyStats(days = 365) {
@@ -45,26 +73,64 @@ export async function insertZbrodniarze(type, channel, username, duration) {
     .values({ type, channel, username, duration });
 }
 
-export async function deleteOldMessages(username) {
-  // First get IDs of messages to keep (latest 5)
-  const latestMessages = await db
-    .select({ id: messagesTable.id })
-    .from(messagesTable)
-    .where(eq(messagesTable.username, username))
-    .orderBy(desc(messagesTable.timestamp))
-    .limit(5);
+// New function to delete messages except the 5 before each zbrodnia
+export async function deleteMessagesExceptLastFiveBeforeEachZbrodnia(username) {
+  // 1. Get all zbrodnia timestamps for the user
+  const zbrodniaEvents = await db
+    .selectDistinct({ timestamp: zbrodniarzeTable.timestamp })
+    .from(zbrodniarzeTable)
+    .where(eq(zbrodniarzeTable.username, username))
+    .orderBy(desc(zbrodniarzeTable.timestamp));
 
-  const messageIdsToKeep = latestMessages.map((msg) => msg.id);
-
-  // Delete all messages for the user except the ones we want to keep
-  return db
-    .delete(messagesTable)
-    .where(
-      and(
-        eq(messagesTable.username, username),
-        notInArray(messagesTable.id, messageIdsToKeep)
-      )
+  if (zbrodniaEvents.length === 0) {
+    // No zbrodnia events for this user, nothing to base deletion on.
+    console.log(
+      `No zbrodnia events found for ${username}, no messages deleted.`
     );
+    return;
+  }
+
+  // 2. For each zbrodnia, find the IDs of the 5 preceding messages
+  let messageIdsToKeep = new Set();
+  for (const event of zbrodniaEvents) {
+    const messagesBeforeEvent = await db
+      .select({ id: messagesTable.id })
+      .from(messagesTable)
+      .where(
+        and(
+          eq(messagesTable.username, username),
+          lt(messagesTable.timestamp, event.timestamp)
+        )
+      )
+      .orderBy(desc(messagesTable.timestamp))
+      .limit(5);
+
+    messagesBeforeEvent.forEach((msg) => messageIdsToKeep.add(msg.id));
+  }
+
+  const uniqueIdsToKeep = Array.from(messageIdsToKeep);
+
+  // 3. Delete all messages for the user NOT in the keep list
+  if (uniqueIdsToKeep.length === 0) {
+    // If no messages were found before *any* zbrodnia event, delete all messages for the user.
+    console.log(
+      `No preceding messages found for any zbrodnia for ${username}. Deleting all messages.`
+    );
+    return db.delete(messagesTable).where(eq(messagesTable.username, username));
+  } else {
+    // Delete messages for the user whose IDs are not in the list
+    console.log(
+      `Keeping ${uniqueIdsToKeep.length} messages for ${username}. Deleting others.`
+    );
+    return db
+      .delete(messagesTable)
+      .where(
+        and(
+          eq(messagesTable.username, username),
+          notInArray(messagesTable.id, uniqueIdsToKeep)
+        )
+      );
+  }
 }
 
 export async function deleteOldMessagesExceptZbrodniarze(hours) {
