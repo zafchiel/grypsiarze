@@ -23,6 +23,21 @@ export function getAllZbrodniarze() {
 }
 
 export async function getMessagesBeforaZbrodnia(username, year, month, day) {
+  // Validate and create Date objects for the start and end of the target day
+  // Note: JavaScript months are 0-indexed (0=Jan, 11=Dec), so subtract 1 from month.
+  // Using Date.UTC ensures consistency regardless of server timezone.
+  const startDate = new Date(
+    Date.UTC(Number(year), Number(month) - 1, Number(day), 0, 0, 0, 0)
+  );
+  const endDate = new Date(startDate);
+  endDate.setUTCDate(startDate.getUTCDate() + 1);
+
+  // Basic validation
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    console.error(`Invalid date provided: ${year}-${month}-${day}`);
+    return [];
+  }
+
   const zbrodniaTimestamp = await db
     .select({ timestamp: zbrodniarzeTable.timestamp })
     .from(zbrodniarzeTable)
@@ -30,14 +45,17 @@ export async function getMessagesBeforaZbrodnia(username, year, month, day) {
       and(
         eq(zbrodniarzeTable.username, username),
         and(
-          gte(zbrodniarzeTable.timestamp, `${year}-${month}-${day} 00:00:00`),
-          lt(zbrodniarzeTable.timestamp, `${year}-${month}-${day + 1} 00:00:00`)
+          gte(zbrodniarzeTable.timestamp, startDate),
+          lt(zbrodniarzeTable.timestamp, endDate)
         )
       )
     )
     .limit(1);
 
   if (zbrodniaTimestamp.length === 0) {
+    console.error(
+      `No zbrodnia found for ${username} on ${year}-${month}-${day}`
+    );
     return [];
   }
 
@@ -48,11 +66,11 @@ export async function getMessagesBeforaZbrodnia(username, year, month, day) {
     .where(
       and(
         eq(messagesTable.username, username),
-        lt(messagesTable.timestamp, zbrodniaTimestamp) // Messages before the zbrodnia
+        lt(messagesTable.timestamp, zbrodniaTimestamp[0].timestamp) // Messages before the zbrodnia
       )
     )
     .orderBy(desc(messagesTable.timestamp)) // Get the ones closest to the zbrodnia time
-    .limit(5); // Limit to 10 messages
+    .limit(5);
 }
 
 export async function getDailyStats(days = 365) {
