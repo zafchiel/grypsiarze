@@ -11,7 +11,11 @@ const app = polka();
 
 app.use(
   cors({
-    origin: ["http://127.0.0.1:5173", "https://glosiciele.pages.dev"],
+    origin: [
+      "http://127.0.0.1:5173",
+      "http://localhost:5173",
+      "https://glosiciele.pages.dev",
+    ],
     methods: ["GET", "HEAD"],
     allowedHeaders: ["Content-Type"],
   })

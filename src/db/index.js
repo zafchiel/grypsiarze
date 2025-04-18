@@ -23,21 +23,27 @@ export function getAllZbrodniarze() {
 }
 
 export async function getMessagesBeforaZbrodnia(username, year, month, day) {
-  // Validate and create Date objects for the start and end of the target day
-  // Note: JavaScript months are 0-indexed (0=Jan, 11=Dec), so subtract 1 from month.
-  // Using Date.UTC ensures consistency regardless of server timezone.
-  const startDate = new Date(
-    Date.UTC(Number(year), Number(month) - 1, Number(day), 0, 0, 0, 0)
-  );
-  const endDate = new Date(startDate);
-  endDate.setUTCDate(startDate.getUTCDate() + 1);
+  // Create timestamp strings in mysql format
+  // JavaScript months are 0-indexed (0=Jan, 11=Dec), so subtract 1 from month.
+  const startDate = `${year}-${month}-${day} 00:00:00`;
 
-  // Basic validation
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+  const endDateObject = new Date(year, month - 1, day + 1);
+  const endDate = `${endDateObject.getFullYear()}-${
+    endDateObject.getMonth() + 1
+  }-${endDateObject.getDate()} 00:00:00`;
+
+  // Validate dates 'YYYY-MM-DD HH:MM:SS'
+  if (
+    typeof startDate !== "string" ||
+    typeof endDate !== "string" ||
+    isNaN(new Date(startDate).getTime()) ||
+    isNaN(new Date(endDate).getTime())
+  ) {
     console.error(`Invalid date provided: ${year}-${month}-${day}`);
     return [];
   }
 
+  // Get the timestamp of the zbrodnia event from provided date range
   const zbrodniaTimestamp = await db
     .select({ timestamp: zbrodniarzeTable.timestamp })
     .from(zbrodniarzeTable)
@@ -45,22 +51,24 @@ export async function getMessagesBeforaZbrodnia(username, year, month, day) {
       and(
         eq(zbrodniarzeTable.username, username),
         and(
-          gte(zbrodniarzeTable.timestamp, startDate),
-          lt(zbrodniarzeTable.timestamp, endDate)
+          sql`${zbrodniarzeTable.timestamp} >= ${startDate} AND ${zbrodniarzeTable.timestamp} <= ${endDate}`
         )
       )
     )
     .limit(1);
 
   if (zbrodniaTimestamp.length === 0) {
-    console.error(
-      `No zbrodnia found for ${username} on ${year}-${month}-${day}`
-    );
-    return [];
+    // If no messages before zbrodnia timestamp are found, return last 5 messages from the user
+    return db
+      .select()
+      .from(messagesTable)
+      .where(eq(messagesTable.username, username))
+      .orderBy(desc(messagesTable.timestamp))
+      .limit(5);
   }
 
   // Fetch 5 messages for the user sent *before* that timestamp
-  return db
+  const messagesBeforeZbrodnia = await db
     .select()
     .from(messagesTable)
     .where(
@@ -70,6 +78,18 @@ export async function getMessagesBeforaZbrodnia(username, year, month, day) {
       )
     )
     .orderBy(desc(messagesTable.timestamp)) // Get the ones closest to the zbrodnia time
+    .limit(5);
+
+  if (messagesBeforeZbrodnia.length > 0) {
+    return messagesBeforeZbrodnia;
+  }
+
+  // If no messages before zbrodnia timestamp are found, return last 5 messages from the user
+  return db
+    .select()
+    .from(messagesTable)
+    .where(eq(messagesTable.username, username))
+    .orderBy(desc(messagesTable.timestamp))
     .limit(5);
 }
 
