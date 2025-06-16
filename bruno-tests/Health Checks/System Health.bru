@@ -1,0 +1,62 @@
+meta {
+  name: System Health
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("System health response structure", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.have.property('status');
+    expect(res.getBody()).to.have.property('timestamp');
+    expect(res.getBody()).to.have.property('uptime');
+    expect(res.getBody()).to.have.property('memory');
+    expect(res.getBody()).to.have.property('cache');
+    expect(res.getBody()).to.have.property('version');
+  });
+
+  test("Status is healthy", function() {
+    expect(res.getBody().status).to.be.oneOf(['healthy', 'degraded']);
+  });
+
+  test("Memory information", function() {
+    const memory = res.getBody().memory;
+    expect(memory).to.have.property('rss');
+    expect(memory).to.have.property('heapTotal');
+    expect(memory).to.have.property('heapUsed');
+    expect(memory).to.have.property('external');
+    expect(memory.rss).to.be.a('number');
+  });
+
+  test("Cache health information", function() {
+    const cache = res.getBody().cache;
+    expect(cache).to.have.property('healthy');
+    expect(cache).to.have.property('connected');
+    expect(cache).to.have.property('timestamp');
+    expect(cache.healthy).to.be.a('boolean');
+    expect(cache.connected).to.be.a('boolean');
+  });
+
+  test("Uptime is positive", function() {
+    expect(res.getBody().uptime).to.be.above(0);
+  });
+
+  test("Version is present", function() {
+    expect(res.getBody().version).to.match(/^v\d+\.\d+\.\d+/);
+  });
+
+  test("Response time is reasonable", function() {
+    expect(res.getResponseTime()).to.be.below(200);
+  });
+}

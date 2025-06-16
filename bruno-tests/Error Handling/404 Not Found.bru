@@ -1,0 +1,51 @@
+meta {
+  name: 404 Not Found
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/nonexistent-endpoint
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+  res.body: isJson
+}
+
+tests {
+  test("Non-existent endpoint returns 404", function() {
+    expect(res.getStatus()).to.equal(404);
+  });
+
+  test("Error response has proper structure", function() {
+    expect(res.getBody()).to.have.property('error');
+    expect(res.getBody().error).to.equal('Not Found');
+  });
+
+  test("Response includes request details", function() {
+    expect(res.getBody()).to.have.property('path');
+    expect(res.getBody()).to.have.property('method');
+    expect(res.getBody().path).to.equal('/nonexistent-endpoint');
+    expect(res.getBody().method).to.equal('GET');
+  });
+
+  test("Content-Type is JSON", function() {
+    expect(res.getHeader('content-type')).to.equal('application/json');
+  });
+
+  test("Response time is fast for 404", function() {
+    expect(res.getResponseTime()).to.be.below(100);
+  });
+
+  test("No cache headers for error response", function() {
+    expect(res.getHeader('cache-control')).to.be.null;
+  });
+
+  test("Error response is well-formed JSON", function() {
+    expect(res.getBody()).to.be.an('object');
+    expect(Object.keys(res.getBody())).to.include.members(['error', 'path', 'method']);
+  });
+}

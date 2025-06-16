@@ -1,0 +1,90 @@
+meta {
+  name: Get Zbrodniarze (Cache Hit)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/zbrodniarze
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Second request should be faster (cache hit)", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    // This should be significantly faster than the first request
+    expect(res.getResponseTime()).to.be.below(100);
+  });
+
+  test("Response data should be identical to first request", function() {
+    const currentData = res.getBody();
+
+    // Should return same number of items as first request
+    if (bru.getVar('totalZbrodniarze')) {
+      expect(currentData.length).to.equal(parseInt(bru.getVar('totalZbrodniarze')));
+    }
+
+    expect(currentData).to.be.an('array');
+  });
+
+  test("Cache headers are present", function() {
+    expect(res.getHeader('cache-control')).to.equal('public, max-age=300');
+    expect(res.getHeader('vary')).to.equal('Accept-Encoding');
+  });
+
+  test("Performance improvement from caching", function() {
+    const currentTime = res.getResponseTime();
+    const firstTime = bru.getVar('firstRequestTime');
+
+    if (firstTime) {
+      const improvement = parseFloat(firstTime) / currentTime;
+      console.log(`Performance improvement: ${improvement.toFixed(2)}x faster`);
+
+      // Cache hit should be at least 2x faster than cache miss
+      expect(improvement).to.be.at.least(1.5);
+    }
+  });
+
+  test("Data consistency", function() {
+    const zbrodniarze = res.getBody();
+
+    // Verify data structure is consistent
+    if (zbrodniarze.length > 0) {
+      zbrodniarze.forEach(function(item) {
+        expect(item).to.have.property('id');
+        expect(item).to.have.property('username');
+        expect(item).to.have.property('type');
+        expect(item).to.have.property('timestamp');
+      });
+    }
+  });
+
+  test("Cached response is still ordered correctly", function() {
+    const zbrodniarze = res.getBody();
+
+    if (zbrodniarze.length > 1) {
+      for (let i = 0; i < zbrodniarze.length - 1; i++) {
+        const current = new Date(zbrodniarze[i].timestamp);
+        const next = new Date(zbrodniarze[i + 1].timestamp);
+
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+
+  test("Content-Type header is correct", function() {
+    expect(res.getHeader('content-type')).to.equal('application/json');
+  });
+}
+
+vars:post-response {
+  secondRequestTime: {{res.getResponseTime()}}
+  cacheHitData: {{JSON.stringify(res.getBody())}}
+}

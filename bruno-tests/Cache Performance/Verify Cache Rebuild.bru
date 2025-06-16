@@ -1,0 +1,121 @@
+meta {
+  name: Verify Cache Rebuild
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/zbrodniarze
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Second request after cache miss should be faster (cache rebuilt)", function() {
+    expect(res.getStatus()).to.equal(200);
+
+    const currentTime = res.getResponseTime();
+    const previousMissTime = bru.getVar('cacheMissTime');
+
+    if (previousMissTime) {
+      console.log(`Cache rebuild response time: ${currentTime}ms`);
+      console.log(`Previous cache miss time: ${previousMissTime}ms`);
+
+      // This request should be faster than the cache miss
+      // because the cache was rebuilt from the previous request
+      expect(currentTime).to.be.below(parseFloat(previousMissTime) * 1.5);
+    }
+
+    // Should be reasonably fast (cache hit)
+    expect(currentTime).to.be.below(100);
+  });
+
+  test("Data consistency after cache rebuild", function() {
+    const currentData = res.getBody();
+    const previousData = bru.getVar('cacheMissData');
+
+    if (previousData) {
+      const prevParsed = JSON.parse(previousData);
+
+      // Should have same number of items
+      expect(currentData.length).to.equal(prevParsed.length);
+
+      // Data should be identical (assuming no new data was added)
+      if (currentData.length > 0 && prevParsed.length > 0) {
+        expect(currentData[0].id).to.equal(prevParsed[0].id);
+        expect(currentData[0].username).to.equal(prevParsed[0].username);
+      }
+    }
+  });
+
+  test("Cache is now populated and working", function() {
+    expect(res.getBody()).to.be.an('array');
+
+    // Response should be fast, indicating cache hit
+    expect(res.getResponseTime()).to.be.below(100);
+  });
+
+  test("Cache headers are present", function() {
+    expect(res.getHeader('cache-control')).to.equal('public, max-age=300');
+    expect(res.getHeader('vary')).to.equal('Accept-Encoding');
+  });
+
+  test("Performance improvement over cache miss", function() {
+    const currentTime = res.getResponseTime();
+    const missTime = bru.getVar('cacheMissTime');
+
+    if (missTime) {
+      const improvement = parseFloat(missTime) / currentTime;
+      console.log(`Cache rebuild improvement: ${improvement.toFixed(2)}x faster than miss`);
+
+      // Should be significantly faster than cache miss
+      expect(improvement).to.be.above(1.2);
+    }
+  });
+
+  test("Data structure is valid", function() {
+    const zbrodniarze = res.getBody();
+
+    if (zbrodniarze.length > 0) {
+      zbrodniarze.forEach(function(item) {
+        expect(item).to.have.property('id');
+        expect(item).to.have.property('username');
+        expect(item).to.have.property('type');
+        expect(item).to.have.property('timestamp');
+
+        expect(item.id).to.be.a('number');
+        expect(item.username).to.be.a('string');
+        expect(item.type).to.be.a('string');
+        expect(item.timestamp).to.be.a('string');
+      });
+    }
+  });
+
+  test("Cache rebuild maintains data ordering", function() {
+    const zbrodniarze = res.getBody();
+
+    if (zbrodniarze.length > 1) {
+      for (let i = 0; i < zbrodniarze.length - 1; i++) {
+        const current = new Date(zbrodniarze[i].timestamp);
+        const next = new Date(zbrodniarze[i + 1].timestamp);
+
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+
+  test("Content-Type is correct", function() {
+    expect(res.getHeader('content-type')).to.equal('application/json');
+  });
+}
+
+vars:post-response {
+  cacheRebuildTime: {{res.getResponseTime()}}
+  finalDataLength: {{res.getBody().length}}
+  cacheRebuildComplete: true
+}

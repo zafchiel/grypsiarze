@@ -1,0 +1,95 @@
+meta {
+  name: Get Zbrodniarze
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/zbrodniarze
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Zbrodniarze endpoint returns success", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response is array", function() {
+    expect(res.getBody()).to.be.an('array');
+  });
+
+  test("Response has cache headers", function() {
+    expect(res.getHeader('cache-control')).to.equal('public, max-age=300');
+    expect(res.getHeader('vary')).to.equal('Accept-Encoding');
+  });
+
+  test("Content-Type is JSON", function() {
+    expect(res.getHeader('content-type')).to.equal('application/json');
+  });
+
+  test("Each zbrodniarze item has required fields", function() {
+    const zbrodniarze = res.getBody();
+
+    if (zbrodniarze.length > 0) {
+      zbrodniarze.forEach(function(item) {
+        expect(item).to.have.property('id');
+        expect(item).to.have.property('username');
+        expect(item).to.have.property('type');
+        expect(item).to.have.property('timestamp');
+
+        expect(item.id).to.be.a('number');
+        expect(item.username).to.be.a('string');
+        expect(item.type).to.be.a('string');
+        expect(item.timestamp).to.be.a('string');
+      });
+    }
+  });
+
+  test("Response time is reasonable (should be fast if cached)", function() {
+    // First request might be slower (cache miss)
+    // Subsequent requests should be much faster (cache hit)
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+
+  test("Items are ordered by timestamp desc", function() {
+    const zbrodniarze = res.getBody();
+
+    if (zbrodniarze.length > 1) {
+      for (let i = 0; i < zbrodniarze.length - 1; i++) {
+        const current = new Date(zbrodniarze[i].timestamp);
+        const next = new Date(zbrodniarze[i + 1].timestamp);
+
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+
+  test("Type values are valid", function() {
+    const zbrodniarze = res.getBody();
+    const validTypes = ['ban', 'timeout'];
+
+    zbrodniarze.forEach(function(item) {
+      expect(validTypes).to.include(item.type);
+    });
+  });
+
+  test("Usernames are not empty", function() {
+    const zbrodniarze = res.getBody();
+
+    zbrodniarze.forEach(function(item) {
+      expect(item.username).to.not.be.empty;
+      expect(item.username.trim()).to.not.be.empty;
+    });
+  });
+}
+
+vars:post-response {
+  firstRequestTime: {{res.getResponseTime()}}
+  totalZbrodniarze: {{res.getBody().length}}
+}

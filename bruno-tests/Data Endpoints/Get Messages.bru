@@ -1,0 +1,120 @@
+meta {
+  name: Get Messages
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/messages/{{testUser}}/{{testYear}}/{{testMonth}}/{{testDay}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Messages endpoint returns success", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response is array", function() {
+    expect(res.getBody()).to.be.an('array');
+  });
+
+  test("Response has cache headers", function() {
+    expect(res.getHeader('cache-control')).to.equal('public, max-age=600');
+    expect(res.getHeader('vary')).to.equal('Accept-Encoding');
+  });
+
+  test("Content-Type is JSON", function() {
+    expect(res.getHeader('content-type')).to.equal('application/json');
+  });
+
+  test("Each message has required fields", function() {
+    const messages = res.getBody();
+
+    if (messages.length > 0) {
+      messages.forEach(function(message) {
+        expect(message).to.have.property('id');
+        expect(message).to.have.property('username');
+        expect(message).to.have.property('message');
+        expect(message).to.have.property('timestamp');
+
+        expect(message.id).to.be.a('number');
+        expect(message.username).to.be.a('string');
+        expect(message.message).to.be.a('string');
+        expect(message.timestamp).to.be.a('string');
+      });
+    }
+  });
+
+  test("Username matches request parameter", function() {
+    const messages = res.getBody();
+
+    messages.forEach(function(message) {
+      expect(message.username).to.equal(bru.getEnvVar('testUser'));
+    });
+  });
+
+  test("Messages are not empty", function() {
+    const messages = res.getBody();
+
+    messages.forEach(function(message) {
+      expect(message.message).to.not.be.empty;
+      expect(message.message.trim()).to.not.be.empty;
+    });
+  });
+
+  test("Messages are ordered by timestamp desc", function() {
+    const messages = res.getBody();
+
+    if (messages.length > 1) {
+      for (let i = 0; i < messages.length - 1; i++) {
+        const current = new Date(messages[i].timestamp);
+        const next = new Date(messages[i + 1].timestamp);
+
+        expect(current.getTime()).to.be.at.least(next.getTime());
+      }
+    }
+  });
+
+  test("Maximum 5 messages returned", function() {
+    const messages = res.getBody();
+    expect(messages.length).to.be.at.most(5);
+  });
+
+  test("Response time is reasonable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+
+  test("Timestamps are valid dates", function() {
+    const messages = res.getBody();
+
+    messages.forEach(function(message) {
+      const timestamp = new Date(message.timestamp);
+      expect(timestamp.getTime()).to.not.be.NaN;
+    });
+  });
+
+  test("Messages are from correct date range", function() {
+    const messages = res.getBody();
+    const testDate = new Date(`${bru.getEnvVar('testYear')}-${bru.getEnvVar('testMonth')}-${bru.getEnvVar('testDay')}`);
+    const nextDay = new Date(testDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    messages.forEach(function(message) {
+      const messageDate = new Date(message.timestamp);
+      // Messages should be from the requested date or before
+      expect(messageDate.getTime()).to.be.below(nextDay.getTime());
+    });
+  });
+}
+
+vars:post-response {
+  messagesFirstTime: {{res.getResponseTime()}}
+  messagesCount: {{res.getBody().length}}
+  firstMessageId: {{res.getBody().length > 0 ? res.getBody()[0].id : null}}
+}

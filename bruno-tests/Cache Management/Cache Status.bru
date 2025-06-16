@@ -1,0 +1,55 @@
+meta {
+  name: Cache Status
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/cache/status
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Cache status response structure", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.have.property('stats');
+    expect(res.getBody()).to.have.property('health');
+  });
+
+  test("Cache stats information", function() {
+    const stats = res.getBody().stats;
+    expect(stats).to.have.property('connected');
+    expect(stats).to.have.property('dbSize');
+    expect(stats.connected).to.be.a('boolean');
+    expect(stats.dbSize).to.be.a('number');
+  });
+
+  test("Cache health information", function() {
+    const health = res.getBody().health;
+    expect(health).to.have.property('healthy');
+    expect(health).to.have.property('connected');
+    expect(health).to.have.property('timestamp');
+    expect(health.healthy).to.be.a('boolean');
+    expect(health.connected).to.be.a('boolean');
+    expect(health.timestamp).to.be.a('number');
+  });
+
+  test("Database size is non-negative", function() {
+    expect(res.getBody().stats.dbSize).to.be.at.least(0);
+  });
+
+  test("Response time is reasonable", function() {
+    expect(res.getResponseTime()).to.be.below(500);
+  });
+
+  test("Cache connection should be working", function() {
+    expect(res.getBody().stats.connected).to.equal(true);
+    expect(res.getBody().health.connected).to.equal(true);
+  });
+}

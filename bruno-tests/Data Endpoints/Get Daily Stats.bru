@@ -1,0 +1,110 @@
+meta {
+  name: Get Daily Stats
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/daily-stats
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Daily stats endpoint returns success", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response is array", function() {
+    expect(res.getBody()).to.be.an('array');
+  });
+
+  test("Response has cache headers", function() {
+    expect(res.getHeader('cache-control')).to.equal('public, max-age=900');
+    expect(res.getHeader('vary')).to.equal('Accept-Encoding');
+  });
+
+  test("Content-Type is JSON", function() {
+    expect(res.getHeader('content-type')).to.equal('application/json');
+  });
+
+  test("Each stats item has required fields", function() {
+    const stats = res.getBody();
+
+    if (stats.length > 0) {
+      stats.forEach(function(item) {
+        expect(item).to.have.property('id');
+        expect(item).to.have.property('date');
+        expect(item).to.have.property('timeouts');
+        expect(item).to.have.property('bans');
+
+        expect(item.id).to.be.a('number');
+        expect(item.date).to.be.a('string');
+        expect(item.timeouts).to.be.a('number');
+        expect(item.bans).to.be.a('number');
+      });
+    }
+  });
+
+  test("Stats values are non-negative", function() {
+    const stats = res.getBody();
+
+    stats.forEach(function(item) {
+      expect(item.timeouts).to.be.at.least(0);
+      expect(item.bans).to.be.at.least(0);
+      expect(item.id).to.be.above(0);
+    });
+  });
+
+  test("Dates are valid and ordered", function() {
+    const stats = res.getBody();
+
+    if (stats.length > 1) {
+      for (let i = 0; i < stats.length - 1; i++) {
+        const current = new Date(stats[i].date);
+        const next = new Date(stats[i + 1].date);
+
+        expect(current.getTime()).to.not.be.NaN;
+        expect(next.getTime()).to.not.be.NaN;
+        expect(current.getTime()).to.be.below(next.getTime());
+      }
+    }
+  });
+
+  test("Response time is reasonable", function() {
+    expect(res.getResponseTime()).to.be.below(2000);
+  });
+
+  test("Stats contain recent data", function() {
+    const stats = res.getBody();
+
+    if (stats.length > 0) {
+      const latestDate = new Date(stats[stats.length - 1].date);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      expect(latestDate.getTime()).to.be.above(thirtyDaysAgo.getTime());
+    }
+  });
+
+  test("Date format is consistent", function() {
+    const stats = res.getBody();
+
+    stats.forEach(function(item) {
+      // Should be in YYYY-MM-DD format or ISO format
+      const datePattern = /^\d{4}-\d{2}-\d{2}/;
+      expect(item.date).to.match(datePattern);
+    });
+  });
+}
+
+vars:post-response {
+  dailyStatsFirstTime: {{res.getResponseTime()}}
+  totalStatsCount: {{res.getBody().length}}
+  latestStatsDate: {{res.getBody().length > 0 ? res.getBody()[res.getBody().length - 1].date : null}}
+}

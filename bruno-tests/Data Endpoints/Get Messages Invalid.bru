@@ -1,0 +1,43 @@
+meta {
+  name: Get Messages Invalid
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/messages///
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 400
+  res.body: isJson
+}
+
+tests {
+  test("Invalid parameters return 400", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("Error response has proper structure", function() {
+    expect(res.getBody()).to.have.property('error');
+    expect(res.getBody().error).to.be.a('string');
+  });
+
+  test("Error message indicates missing parameters", function() {
+    expect(res.getBody().error).to.equal('Missing required parameters');
+  });
+
+  test("Content-Type is JSON", function() {
+    expect(res.getHeader('content-type')).to.equal('application/json');
+  });
+
+  test("Response time is fast for validation error", function() {
+    expect(res.getResponseTime()).to.be.below(100);
+  });
+
+  test("No cache headers for error response", function() {
+    expect(res.getHeader('cache-control')).to.be.null;
+  });
+}

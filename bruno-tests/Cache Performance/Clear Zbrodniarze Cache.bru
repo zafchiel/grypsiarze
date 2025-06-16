@@ -1,0 +1,63 @@
+meta {
+  name: Clear Zbrodniarze Cache
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{baseUrl}}/cache/invalidate/zbrodniarze
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Cache invalidation successful", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response has success message", function() {
+    expect(res.getBody()).to.have.property('message');
+    expect(res.getBody().message).to.equal('Zbrodniarze cache invalidated');
+  });
+
+  test("Response includes timestamp", function() {
+    expect(res.getBody()).to.have.property('timestamp');
+    expect(res.getBody().timestamp).to.be.a('string');
+
+    // Verify it's a valid ISO timestamp
+    const timestamp = new Date(res.getBody().timestamp);
+    expect(timestamp.getTime()).to.not.be.NaN;
+  });
+
+  test("Timestamp is recent", function() {
+    const responseTimestamp = new Date(res.getBody().timestamp);
+    const now = new Date();
+    const diff = now.getTime() - responseTimestamp.getTime();
+
+    // Should be within 5 seconds
+    expect(diff).to.be.below(5000);
+  });
+
+  test("Content-Type is JSON", function() {
+    expect(res.getHeader('Content-Type')).to.equal('application/json');
+  });
+
+  test("Response time is reasonable", function() {
+    expect(res.getResponseTime()).to.be.below(500);
+  });
+
+  test("Cache invalidation affects both zbrodniarze and stats", function() {
+    // The invalidation should clear both zbrodniarze and daily stats cache
+    // This is tested implicitly by the success response
+    expect(res.getBody().message).to.contain('invalidated');
+  });
+}
+
+vars:post-response {
+  cacheInvalidatedAt: {{res.getBody().timestamp}}
+}

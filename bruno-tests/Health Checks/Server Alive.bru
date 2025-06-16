@@ -1,0 +1,34 @@
+meta {
+  name: Server Alive
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/alive
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isJson
+}
+
+tests {
+  test("Server is alive", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.have.property('message');
+    expect(res.getBody().message).to.equal('Server is alive');
+    expect(res.getBody()).to.have.property('timestamp');
+    expect(res.getBody()).to.have.property('uptime');
+  });
+
+  test("Response has correct headers", function() {
+    expect(res.getHeader('content-type')).to.equal('application/json');
+  });
+
+  test("Response time is reasonable", function() {
+    expect(res.getResponseTime()).to.be.below(100);
+  });
+}

@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Grypsiarze API Tests",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
