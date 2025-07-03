@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "moduleResolution": "node",
+    "types": ["bun"],
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src/**/*.ts", "src/db/**/*.ts"],
+  "exclude": ["node_modules"]
+}

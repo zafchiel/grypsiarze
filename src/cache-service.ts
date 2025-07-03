@@ -1,6 +1,9 @@
 import RedisCache from "./cache.js";
 
 class CacheService {
+  private cache: RedisCache;
+  private isInitialized: boolean;
+
   constructor() {
     this.cache = new RedisCache();
     this.isInitialized = false;
@@ -24,9 +27,9 @@ class CacheService {
   static keys = {
     zbrodniarze: () => "zbrodniarze:all",
     dailyStats: () => "stats:daily",
-    messages: (username, year, month, day) =>
+    messages: (username: string, year: number, month: number, day: number) =>
       `messages:${username}:${year}:${month}:${day}`,
-    userMessages: (username) => `messages:${username}:*`,
+    userMessages: (username: string) => `messages:${username}:*`,
   };
 
   // Cache TTL constants (in seconds)
@@ -36,7 +39,7 @@ class CacheService {
     DAILY_STATS: 900, // 15 minutes
   };
 
-  async get(key) {
+  async get(key: string) {
     try {
       await this.initialize();
       return await this.cache.get(key);
@@ -46,7 +49,7 @@ class CacheService {
     }
   }
 
-  async set(key, value, ttl = 300) {
+  async set(key: string, value: any, ttl = 300) {
     try {
       await this.initialize();
       return await this.cache.set(key, value, ttl);
@@ -56,7 +59,7 @@ class CacheService {
     }
   }
 
-  async delete(key) {
+  async delete(key: string) {
     try {
       await this.initialize();
       return await this.cache.delete(key);
@@ -66,7 +69,7 @@ class CacheService {
     }
   }
 
-  async deletePattern(pattern) {
+  async deletePattern(pattern: string) {
     try {
       await this.initialize();
       return await this.cache.deletePattern(pattern);
@@ -88,7 +91,7 @@ class CacheService {
 
   // High-level cache operations for specific entities
 
-  async cacheZbrodniarze(data) {
+  async cacheZbrodniarze(data: any) {
     return this.set(
       CacheService.keys.zbrodniarze(),
       data,
@@ -111,17 +114,17 @@ class CacheService {
     }
   }
 
-  async cacheMessages(username, year, month, day, data) {
+  async cacheMessages(username: string, year: number, month: number, day: number, data: any) {
     const key = CacheService.keys.messages(username, year, month, day);
     return this.set(key, data, CacheService.TTL.MESSAGES);
   }
 
-  async getCachedMessages(username, year, month, day) {
+  async getCachedMessages(username: string, year: number, month: number, day: number) {
     const key = CacheService.keys.messages(username, year, month, day);
     return this.get(key);
   }
 
-  async invalidateUserMessages(username) {
+  async invalidateUserMessages(username: string) {
     try {
       const pattern = CacheService.keys.userMessages(username);
       const result = await this.deletePattern(pattern);
@@ -138,7 +141,7 @@ class CacheService {
     }
   }
 
-  async cacheDailyStats(data) {
+  async cacheDailyStats(data: any) {
     return this.set(
       CacheService.keys.dailyStats(),
       data,
@@ -173,7 +176,7 @@ class CacheService {
   }
 
   // Cache warming - preload frequently accessed data
-  async warmCache(dbFunctions) {
+  async warmCache(dbFunctions: any) {
     try {
       console.log("Warming cache...");
 
@@ -207,7 +210,7 @@ class CacheService {
         connected: this.cache.isConnected,
         timestamp: Date.now(),
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         healthy: false,
         connected: false,
@@ -222,7 +225,7 @@ class CacheService {
     try {
       await this.initialize();
       return await this.cache.getStats();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Cache stats error:", error);
       return {
         connected: false,

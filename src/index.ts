@@ -1,0 +1,103 @@
+import tmi from "tmi.js";
+import winston from "winston";
+import cron from "node-cron";
+import {
+  insertZbrodniarze,
+  insertMessage,
+  deleteMessagesExceptLastFiveBeforeEachZbrodnia,
+  deleteOldMessagesExceptZbrodniarze,
+  incrementDailyStat,
+} from "./db/index.ts";
+
+// Configure logger
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json(),
+  ),
+  transports: [new winston.transports.Console()],
+});
+
+// Configure TMI client
+const client = new tmi.Client({
+  options: { debug: true },
+  identity: {
+    username: process.env.TWITCH_USERNAME,
+    password: process.env.TWITCH_OAUTH_TOKEN,
+  },
+  channels: [process.env.CHANNEL_NAME!],
+});
+
+// Connect to Twitch
+client.connect().catch((error) => {
+  console.error("Error connecting to Twitch:", error);
+});
+
+// Store user messages
+client.on(
+  "message",
+  async (
+    channel: string,
+    userstate: tmi.ChatUserstate,
+    message: string,
+    self: boolean,
+  ) => {
+    if (self || userstate.username === "streamelements") return;
+
+    try {
+      await insertMessage(userstate.username ?? "", message);
+    } catch (error) {
+      logger.error(error);
+    }
+  },
+);
+
+// Listen for timeout events
+client.on(
+  "timeout",
+  async (
+    channel: string,
+    username: string,
+    reason: string,
+    duration: number,
+    userstate: tmi.TimeoutUserstate,
+  ) => {
+    try {
+      await insertZbrodniarze("timeout", channel, username, duration);
+      await incrementDailyStat("timeout");
+      // await deleteMessagesExceptLastFiveBeforeEachZbrodnia(username);
+    } catch (error) {
+      logger.error(`Error handling timeout for ${username}:`, error);
+    }
+  },
+);
+
+// Listen for ban events
+client.on(
+  "ban",
+  async (
+    channel: string,
+    username: string,
+    reason: string,
+    userstate: tmi.BanUserstate,
+  ) => {
+    try {
+      await insertZbrodniarze("ban", channel, username, 0);
+      await incrementDailyStat("ban");
+      // await deleteMessagesExceptLastFiveBeforeEachZbrodnia(username);
+    } catch (error) {
+      logger.error(`Error handling ban for ${username}:`, error);
+    }
+  },
+);
+
+// Configure cron job to run every 24 hours
+// cron.schedule("0 0 * * *", async () => {
+//   try {
+//     await deleteOldMessagesExceptZbrodniarze(24); // 24 hours = 1 day
+//     logger.info("Cleaned up old messages");
+//   } catch (error) {
+//     logger.error("Error cleaning up old messages:", error);
+//   }
+// });

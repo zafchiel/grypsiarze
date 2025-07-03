@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/mysql2";
 import { eq, desc, notInArray, and, sql, gte, asc, lt } from "drizzle-orm";
-import { dailyStatsTable, messagesTable, zbrodniarzeTable } from "./schema.js";
+import { dailyStatsTable, messagesTable, zbrodniarzeTable } from "./schema.ts";
 import { config } from "dotenv";
 import cacheService from "../cache-service.js";
 
@@ -12,7 +12,7 @@ if (!process.env.DATABASE_URL) {
 
 export const db = drizzle(process.env.DATABASE_URL);
 
-export async function insertMessage(username, message) {
+export async function insertMessage(username: string, message: string) {
   const result = await db.insert(messagesTable).values({ username, message });
   // Invalidate user messages cache
   await cacheService.invalidateUserMessages(username);
@@ -26,15 +26,14 @@ export function getAllZbrodniarze() {
     .orderBy(desc(zbrodniarzeTable.timestamp));
 }
 
-export async function getMessagesBeforaZbrodnia(username, year, month, day) {
+export async function getMessagesBeforaZbrodnia(username: string, year: number, month: number, day: number) {
   // Create timestamp strings in mysql format
   // JavaScript months are 0-indexed (0=Jan, 11=Dec), so subtract 1 from month.
   const startDate = `${year}-${month}-${day} 00:00:00`;
 
   const endDateObject = new Date(year, month - 1, day + 1);
-  const endDate = `${endDateObject.getFullYear()}-${
-    endDateObject.getMonth() + 1
-  }-${endDateObject.getDate()} 00:00:00`;
+  const endDate = `${endDateObject.getFullYear()}-${endDateObject.getMonth() + 1
+    }-${endDateObject.getDate()} 00:00:00`;
 
   // Validate dates 'YYYY-MM-DD HH:MM:SS'
   if (
@@ -78,7 +77,7 @@ export async function getMessagesBeforaZbrodnia(username, year, month, day) {
     .where(
       and(
         eq(messagesTable.username, username),
-        lt(messagesTable.timestamp, zbrodniaTimestamp[0].timestamp), // Messages before the zbrodnia
+        lt(messagesTable.timestamp, zbrodniaTimestamp[0].timestamp!),
       ),
     )
     .orderBy(desc(messagesTable.timestamp)) // Get the ones closest to the zbrodnia time
@@ -109,7 +108,7 @@ export async function getDailyStats(days = 365) {
     .orderBy(asc(dailyStatsTable.date));
 }
 
-export async function insertZbrodniarze(type, channel, username, duration) {
+export async function insertZbrodniarze(type: string, channel: string, username: string, duration: number) {
   const result = await db
     .insert(zbrodniarzeTable)
     .values({ type, channel, username, duration });
@@ -122,7 +121,7 @@ export async function insertZbrodniarze(type, channel, username, duration) {
 }
 
 // New function to delete messages except the 5 before each zbrodnia
-export async function deleteMessagesExceptLastFiveBeforeEachZbrodnia(username) {
+export async function deleteMessagesExceptLastFiveBeforeEachZbrodnia(username: string) {
   // 1. Get all zbrodnia timestamps for the user
   const zbrodniaEvents = await db
     .selectDistinct({ timestamp: zbrodniarzeTable.timestamp })
@@ -139,7 +138,7 @@ export async function deleteMessagesExceptLastFiveBeforeEachZbrodnia(username) {
   }
 
   // 2. For each zbrodnia, find the IDs of the 5 preceding messages
-  let messageIdsToKeep = new Set();
+  let messageIdsToKeep = new Set<number>();
   for (const event of zbrodniaEvents) {
     const messagesBeforeEvent = await db
       .select({ id: messagesTable.id })
@@ -147,7 +146,7 @@ export async function deleteMessagesExceptLastFiveBeforeEachZbrodnia(username) {
       .where(
         and(
           eq(messagesTable.username, username),
-          lt(messagesTable.timestamp, event.timestamp),
+          lt(messagesTable.timestamp, event.timestamp!),
         ),
       )
       .orderBy(desc(messagesTable.timestamp))
@@ -181,7 +180,7 @@ export async function deleteMessagesExceptLastFiveBeforeEachZbrodnia(username) {
   }
 }
 
-export async function deleteOldMessagesExceptZbrodniarze(hours) {
+export async function deleteOldMessagesExceptZbrodniarze(hours: number) {
   const hourAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
 
   await db
@@ -200,7 +199,7 @@ export async function deleteOldMessagesExceptZbrodniarze(hours) {
 }
 
 // Function to update daily stats when new ban/timeout is added
-export async function incrementDailyStat(type) {
+export async function incrementDailyStat(type: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -216,9 +215,8 @@ export async function incrementDailyStat(type) {
     result = await db
       .update(dailyStatsTable)
       .set({
-        [type === "ban" ? "bans" : "timeouts"]: sql`${
-          type === "ban" ? dailyStatsTable.bans : dailyStatsTable.timeouts
-        } + 1`,
+        [type === "ban" ? "bans" : "timeouts"]: sql`${type === "ban" ? dailyStatsTable.bans : dailyStatsTable.timeouts
+          } + 1`,
       })
       .where(eq(dailyStatsTable.date, today));
   } else {

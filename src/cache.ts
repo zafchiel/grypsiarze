@@ -5,6 +5,10 @@ import { config } from "dotenv";
 config();
 
 class RedisCache {
+  private client: any;
+  public isConnected: boolean;
+  private isConnecting: boolean;
+
   constructor() {
     const redisUrl = process.env.REDIS_URL;
 
@@ -15,7 +19,7 @@ class RedisCache {
     this.client = createClient({
       url: redisUrl,
       socket: {
-        reconnectStrategy: (retries) => {
+        reconnectStrategy: (retries: number) => {
           if (retries > 10) {
             console.error("Max Redis reconnection attempts reached");
             return false;
@@ -27,7 +31,7 @@ class RedisCache {
       },
     });
 
-    this.client.on("error", (err) => {
+    this.client.on("error", (err: any) => {
       console.error("Redis Client Error:", err);
     });
 
@@ -73,7 +77,7 @@ class RedisCache {
     return this.isConnected;
   }
 
-  async set(key, value, ttlSeconds = 300) {
+  async set(key: string, value: any, ttlSeconds = 300) {
     try {
       const connected = await this.ensureConnection();
       if (!connected) {
@@ -90,7 +94,7 @@ class RedisCache {
     }
   }
 
-  async get(key) {
+  async get(key: string) {
     try {
       const connected = await this.ensureConnection();
       if (!connected) {
@@ -112,7 +116,7 @@ class RedisCache {
     }
   }
 
-  async delete(key) {
+  async delete(key: string) {
     try {
       const connected = await this.ensureConnection();
       if (!connected) {
@@ -128,7 +132,7 @@ class RedisCache {
     }
   }
 
-  async deletePattern(pattern) {
+  async deletePattern(pattern: string) {
     try {
       const connected = await this.ensureConnection();
       if (!connected) {
@@ -166,7 +170,7 @@ class RedisCache {
     }
   }
 
-  async exists(key) {
+  async exists(key: string) {
     try {
       const connected = await this.ensureConnection();
       if (!connected) {
@@ -181,7 +185,7 @@ class RedisCache {
     }
   }
 
-  async ttl(key) {
+  async ttl(key: string) {
     try {
       const connected = await this.ensureConnection();
       if (!connected) {
@@ -213,7 +217,7 @@ class RedisCache {
         dbSize,
         memoryInfo: info,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Redis stats error:", error);
       return {
         connected: false,
