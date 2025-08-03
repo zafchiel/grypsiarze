@@ -172,37 +172,51 @@ app.get("/daily-stats", async (req, res) => {
   }
 });
 
-// Route to check if randombrucetv is live
+// Route to check if randombrucetv is live (cache for 1 minute)
 app.get("/twitch/live/randombrucetv", async (req, res) => {
   try {
-    const response = await fetch(
-      `https://api.twitch.tv/helix/streams?user_login=randombrucetv`,
-      {
-        headers: {
-          "Client-ID": process.env.TWITCH_CLIENT_ID,
-          Authorization: `Bearer ${process.env.TWITCH_ACCESS_TOKEN}`,
-        },
-      }
-    );
+    const channel = "randombrucetv";
+    
+    // Check cache first
+    let twitchData = await cacheService.getCachedTwitchLiveStatus(channel);
+    
+    if (!twitchData) {
+      console.log(`Cache miss for Twitch live status of ${channel} - fetching from Twitch API`);
+      
+      const response = await fetch(
+        `https://api.twitch.tv/helix/streams?user_login=${channel}`,
+        {
+          headers: {
+            "Client-ID": process.env.TWITCH_CLIENT_ID,
+            Authorization: `Bearer ${process.env.TWITCH_ACCESS_TOKEN}`,
+          },
+        }
+      );
 
-    const twitchData = await response.json();
-    if (twitchData.data.length > 0) {
-      // Live
-      res.end(
-        JSON.stringify({
+      const apiResponse = await response.json();
+      
+      if (apiResponse.data.length > 0) {
+        // Live
+        twitchData = {
           isLive: true,
-          viewers: twitchData.data[0].viewer_count,
-          streamTitle: twitchData.data[0].title,
-        })
-      );
-    } else {
-      // Not live
-      res.end(
-        JSON.stringify({
+          viewers: apiResponse.data[0].viewer_count,
+          streamTitle: apiResponse.data[0].title,
+        };
+      } else {
+        // Not live
+        twitchData = {
           isLive: false,
-        })
-      );
+        };
+      }
+      
+      // Cache the result
+      await cacheService.cacheTwitchLiveStatus(channel, twitchData);
     }
+
+    // Set cache headers - short TTL since stream status can change quickly
+    setCacheHeaders(res, 60);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(twitchData));
   } catch (error) {
     console.error("Error in /twitch/live/randombrucetv route:", error);
     res.writeHead(500, { "Content-Type": "application/json" });

@@ -27,6 +27,7 @@ class CacheService {
     messages: (username, year, month, day) =>
       `messages:${username}:${year}:${month}:${day}`,
     userMessages: (username) => `messages:${username}:*`,
+    twitchLive: (channel) => `twitch:live:${channel}`,
   };
 
   // Cache TTL constants (in seconds)
@@ -34,6 +35,7 @@ class CacheService {
     ZBRODNIARZE: 300, // 5 minutes
     MESSAGES: 600, // 10 minutes
     DAILY_STATS: 900, // 15 minutes
+    TWITCH_LIVE: 900, // 15 minutes
   };
 
   async get(key) {
@@ -92,7 +94,7 @@ class CacheService {
     return this.set(
       CacheService.keys.zbrodniarze(),
       data,
-      CacheService.TTL.ZBRODNIARZE,
+      CacheService.TTL.ZBRODNIARZE
     );
   }
 
@@ -126,13 +128,13 @@ class CacheService {
       const pattern = CacheService.keys.userMessages(username);
       const result = await this.deletePattern(pattern);
       console.log(
-        `Invalidated ${result} message cache entries for user: ${username}`,
+        `Invalidated ${result} message cache entries for user: ${username}`
       );
       return result;
     } catch (error) {
       console.error(
         `Error invalidating user messages cache for ${username}:`,
-        error,
+        error
       );
       return 0;
     }
@@ -142,7 +144,7 @@ class CacheService {
     return this.set(
       CacheService.keys.dailyStats(),
       data,
-      CacheService.TTL.DAILY_STATS,
+      CacheService.TTL.DAILY_STATS
     );
   }
 
@@ -235,6 +237,27 @@ class CacheService {
     if (this.isInitialized) {
       await this.cache.disconnect();
       this.isInitialized = false;
+    }
+  }
+
+  async cacheTwitchLiveStatus(channel, data) {
+    return this.set(
+      CacheService.keys.twitchLive(channel),
+      data,
+      CacheService.TTL.TWITCH_LIVE
+    );
+  }
+
+  async getCachedTwitchLiveStatus(channel) {
+    return this.get(CacheService.keys.twitchLive(channel));
+  }
+
+  async invalidateTwitchLiveStatus(channel) {
+    try {
+      await this.delete(CacheService.keys.twitchLive(channel));
+      console.log(`Invalidated Twitch live status cache for ${channel}`);
+    } catch (error) {
+      console.error(`Error invalidating Twitch live status cache for ${channel}:`, error);
     }
   }
 }
