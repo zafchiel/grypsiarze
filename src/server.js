@@ -6,6 +6,9 @@ import {
 } from "./db/index.js";
 import cors from "cors";
 import cacheService from "./cache-service.js";
+import { config } from "dotenv";
+
+config();
 
 const PORT = 31457;
 const app = polka();
@@ -72,7 +75,7 @@ app.use(
     ],
     methods: ["GET", "HEAD"],
     allowedHeaders: ["Content-Type"],
-  }),
+  })
 );
 
 // Middleware for error handling
@@ -122,12 +125,12 @@ app.get("/messages/:username/:year/:month/:day", async (req, res) => {
       username,
       year,
       month,
-      day,
+      day
     );
 
     if (!messages) {
       console.log(
-        `Cache miss for messages ${username}/${year}/${month}/${day} - fetching from database`,
+        `Cache miss for messages ${username}/${year}/${month}/${day} - fetching from database`
       );
       messages = await getMessagesBeforaZbrodnia(username, year, month, day);
       await cacheService.cacheMessages(username, year, month, day, messages);
@@ -142,7 +145,7 @@ app.get("/messages/:username/:year/:month/:day", async (req, res) => {
     res.end(
       JSON.stringify({
         error: `Failed to fetch messages for user ${username}`,
-      }),
+      })
     );
   }
 });
@@ -169,6 +172,44 @@ app.get("/daily-stats", async (req, res) => {
   }
 });
 
+// Route to check if randombrucetv is live
+app.get("/twitch/live/randombrucetv", async (req, res) => {
+  try {
+    const response = await fetch(
+      `https://api.twitch.tv/helix/streams?user_login=randombrucetv`,
+      {
+        headers: {
+          "Client-ID": process.env.TWITCH_CLIENT_ID,
+          Authorization: `Bearer ${process.env.TWITCH_ACCESS_TOKEN}`,
+        },
+      }
+    );
+
+    const twitchData = await response.json();
+    if (twitchData.data.length > 0) {
+      // Live
+      res.end(
+        JSON.stringify({
+          isLive: true,
+          viewers: twitchData.data[0].viewer_count,
+          streamTitle: twitchData.data[0].title,
+        })
+      );
+    } else {
+      // Not live
+      res.end(
+        JSON.stringify({
+          isLive: false,
+        })
+      );
+    }
+  } catch (error) {
+    console.error("Error in /twitch/live/randombrucetv route:", error);
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Failed to check streamer status" }));
+  }
+});
+
 // Health check endpoints
 app.get("/alive", (req, res) => {
   res.writeHead(200, { "Content-Type": "application/json" });
@@ -177,7 +218,7 @@ app.get("/alive", (req, res) => {
       message: "Server is alive",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-    }),
+    })
   );
 });
 
@@ -194,7 +235,7 @@ app.use("*", (req, res) => {
       error: "Not Found",
       path: req.path,
       method: req.method,
-    }),
+    })
   );
 });
 
