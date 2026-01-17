@@ -1,0 +1,50 @@
+services:
+  web_server:
+    build: .
+    container_name: web_server
+    command: npm run dev:server
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app # Syncs your local folder to container
+      - /app/node_modules # PREVENTS local node_modules from breaking the container
+    environment:
+      - PORT=3000
+      - MYSQL_DATABASE_URL=${MYSQL_DATABASE_URL}
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+
+  gryps_bot:
+    build: .
+    container_name: gryps_bot
+    command: npm run dev:bot
+    restart: always
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - MYSQL_DATABASE_URL=${MYSQL_DATABASE_URL}
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+
+  mysql_db:
+    image: mysql:8.0
+    container_name: mysql_container
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: glosiciele
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+volumes:
+  mysql_data:
