@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1768684364474,
+      "tag": "0000_lucky_the_fallen",
+      "breakpoints": true
+    }
+  ]
+}
