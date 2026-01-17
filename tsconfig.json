@@ -16,6 +16,6 @@
     "outDir": "dist",
     "sourceMap": true
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "src/db/migrate.js"],
   "exclude": ["node_modules"]
 }
