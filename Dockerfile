@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install dependencies (including devDependencies for TypeScript)
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy source code and build
 COPY . .
