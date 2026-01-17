@@ -1,12 +1,9 @@
 import tmi from "tmi.js";
 import winston from "winston";
 import { config } from "dotenv";
-import cron from "node-cron";
 import {
   insertZbrodniarze,
   insertMessage,
-  deleteMessagesExceptLastFiveBeforeEachZbrodnia,
-  deleteOldMessagesExceptZbrodniarze,
   incrementDailyStat,
 } from "./db/index.js";
 
@@ -18,7 +15,7 @@ const logger = winston.createLogger({
   level: "info",
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.json()
+    winston.format.json(),
   ),
   transports: [new winston.transports.Console()],
 });
@@ -30,7 +27,7 @@ const client = new tmi.Client({
     username: process.env.TWITCH_USERNAME,
     password: process.env.TWITCH_OAUTH_TOKEN,
   },
-  channels: [process.env.CHANNEL_NAME],
+  channels: [process.env.CHANNEL_NAME!],
 });
 
 // Connect to Twitch
@@ -52,7 +49,6 @@ client.on("timeout", async (channel, username, reason, duration, userstate) => {
   try {
     await insertZbrodniarze("timeout", channel, username, duration);
     await incrementDailyStat("timeout");
-    // await deleteMessagesExceptLastFiveBeforeEachZbrodnia(username);
   } catch (error) {
     logger.error(`Error handling timeout for ${username}:`, error);
   }
@@ -63,18 +59,7 @@ client.on("ban", async (channel, username, reason, userstate) => {
   try {
     await insertZbrodniarze("ban", channel, username, 0);
     await incrementDailyStat("ban");
-    // await deleteMessagesExceptLastFiveBeforeEachZbrodnia(username);
   } catch (error) {
     logger.error(`Error handling ban for ${username}:`, error);
   }
 });
-
-// Configure cron job to run every 24 hours
-// cron.schedule("0 0 * * *", async () => {
-//   try {
-//     await deleteOldMessagesExceptZbrodniarze(24); // 24 hours = 1 day
-//     logger.info("Cleaned up old messages");
-//   } catch (error) {
-//     logger.error("Error cleaning up old messages:", error);
-//   }
-// });

@@ -2,20 +2,17 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { eq, desc, notInArray, and, sql, gte, asc, lt } from "drizzle-orm";
 import { dailyStatsTable, messagesTable, zbrodniarzeTable } from "./schema.js";
 import { config } from "dotenv";
-import cacheService from "../cache-service.js";
 
 config();
 
-if (!process.env.DATABASE_URL) {
+if (!process.env.MYSQL_DATABASE_URL) {
   throw new Error("DATABASE_URL is not set");
 }
 
-export const db = drizzle(process.env.DATABASE_URL);
+export const db = drizzle(process.env.MYSQL_DATABASE_URL);
 
-export async function insertMessage(username, message) {
+export async function insertMessage(username: string, message: string) {
   const result = await db.insert(messagesTable).values({ username, message });
-  // Invalidate user messages cache
-  await cacheService.invalidateUserMessages(username);
   return result;
 }
 
@@ -26,7 +23,12 @@ export function getAllZbrodniarze() {
     .orderBy(desc(zbrodniarzeTable.timestamp));
 }
 
-export async function getMessagesBeforaZbrodnia(username, year, month, day) {
+export async function getMessagesBeforaZbrodnia(
+  username: string,
+  year: number,
+  month: number,
+  day: number,
+) {
   // Create timestamp strings in mysql format
   // JavaScript months are 0-indexed (0=Jan, 11=Dec), so subtract 1 from month.
   const startDate = `${year}-${month}-${day} 00:00:00`;
@@ -78,7 +80,10 @@ export async function getMessagesBeforaZbrodnia(username, year, month, day) {
     .where(
       and(
         eq(messagesTable.username, username),
-        lt(messagesTable.timestamp, zbrodniaTimestamp[0].timestamp), // Messages before the zbrodnia
+        lt(
+          messagesTable.timestamp,
+          zbrodniaTimestamp[0]?.timestamp || new Date(),
+        ), // Messages before the zbrodnia
       ),
     )
     .orderBy(desc(messagesTable.timestamp)) // Get the ones closest to the zbrodnia time
@@ -109,98 +114,21 @@ export async function getDailyStats(days = 365) {
     .orderBy(asc(dailyStatsTable.date));
 }
 
-export async function insertZbrodniarze(type, channel, username, duration) {
+export async function insertZbrodniarze(
+  type: "timeout" | "ban",
+  channel: string,
+  username: string,
+  duration: number,
+) {
   const result = await db
     .insert(zbrodniarzeTable)
     .values({ type, channel, username, duration });
 
-  // Invalidate related caches
-  await cacheService.invalidateZbrodniarze();
-  await cacheService.invalidateUserMessages(username);
-
   return result;
 }
 
-// New function to delete messages except the 5 before each zbrodnia
-export async function deleteMessagesExceptLastFiveBeforeEachZbrodnia(username) {
-  // 1. Get all zbrodnia timestamps for the user
-  const zbrodniaEvents = await db
-    .selectDistinct({ timestamp: zbrodniarzeTable.timestamp })
-    .from(zbrodniarzeTable)
-    .where(eq(zbrodniarzeTable.username, username))
-    .orderBy(desc(zbrodniarzeTable.timestamp));
-
-  if (zbrodniaEvents.length === 0) {
-    // No zbrodnia events for this user, nothing to base deletion on.
-    console.log(
-      `No zbrodnia events found for ${username}, no messages deleted.`,
-    );
-    return;
-  }
-
-  // 2. For each zbrodnia, find the IDs of the 5 preceding messages
-  let messageIdsToKeep = new Set();
-  for (const event of zbrodniaEvents) {
-    const messagesBeforeEvent = await db
-      .select({ id: messagesTable.id })
-      .from(messagesTable)
-      .where(
-        and(
-          eq(messagesTable.username, username),
-          lt(messagesTable.timestamp, event.timestamp),
-        ),
-      )
-      .orderBy(desc(messagesTable.timestamp))
-      .limit(5);
-
-    messagesBeforeEvent.forEach((msg) => messageIdsToKeep.add(msg.id));
-  }
-
-  const uniqueIdsToKeep = Array.from(messageIdsToKeep);
-
-  // 3. Delete all messages for the user NOT in the keep list
-  if (uniqueIdsToKeep.length === 0) {
-    // If no messages were found before *any* zbrodnia event, delete all messages for the user.
-    console.log(
-      `No preceding messages found for any zbrodnia for ${username}. Deleting all messages.`,
-    );
-    return db.delete(messagesTable).where(eq(messagesTable.username, username));
-  } else {
-    // Delete messages for the user whose IDs are not in the list
-    console.log(
-      `Keeping ${uniqueIdsToKeep.length} messages for ${username}. Deleting others.`,
-    );
-    return db
-      .delete(messagesTable)
-      .where(
-        and(
-          eq(messagesTable.username, username),
-          notInArray(messagesTable.id, uniqueIdsToKeep),
-        ),
-      );
-  }
-}
-
-export async function deleteOldMessagesExceptZbrodniarze(hours) {
-  const hourAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
-
-  await db
-    .delete(messagesTable)
-    .where(
-      and(
-        sql`${messagesTable.timestamp} < ${hourAgo}`,
-        notInArray(
-          messagesTable.username,
-          db
-            .select({ username: zbrodniarzeTable.username })
-            .from(zbrodniarzeTable),
-        ),
-      ),
-    );
-}
-
 // Function to update daily stats when new ban/timeout is added
-export async function incrementDailyStat(type) {
+export async function incrementDailyStat(type: "timeout" | "ban") {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -229,9 +157,6 @@ export async function incrementDailyStat(type) {
       bans: type === "ban" ? 1 : 0,
     });
   }
-
-  // Invalidate daily stats cache
-  await cacheService.invalidateDailyStats();
 
   return result;
 }

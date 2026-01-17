@@ -5,13 +5,13 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "start:server": "node src/server.js",
-    "start:server:dev": "node src/server-with-cache.js",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx src/db/migrate.ts",
+    "dev:server": "tsx src/server.ts",
+    "dev:bot": "npm run migrate && tsx src/bot.ts",
+    "start": "npm run migrate && npm run dev:server & npm run dev:bot",
     "test:validate": "node validate-test-setup.js",
-    "test:cache": "node test-cache.js",
-    "db:push": "drizzle-kit push",
-    "db:gen": "drizzle-kit generate"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -20,18 +20,19 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.38.4",
+    "express": "^5.2.1",
     "mysql2": "^3.14.1",
-    "node-cron": "^3.0.3",
-    "polka": "^0.5.2",
-    "redis": "^5.5.6",
     "tmi.js": "^1.8.5",
     "winston": "^3.17.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.32",
-    "@types/node-cron": "^3.0.11",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.19.7",
     "@types/tmi.js": "^1.8.6",
     "@types/winston": "^2.4.4",
-    "drizzle-kit": "^0.30.6"
+    "drizzle-kit": "^0.30.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
