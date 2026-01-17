@@ -10,7 +10,7 @@ RUN npm ci --omit=dev
 
 # Copy source code and build
 COPY . .
-RUN npm run generate && npm run build
+RUN npm run build
 
 # Remove devDependencies to save space
 RUN npm prune --production
