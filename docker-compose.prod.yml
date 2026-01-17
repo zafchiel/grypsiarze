@@ -1,0 +1,61 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build: .
+    image: grypsiarze-migrate:prod
+    command: ["node", "src/db/migrate.js"]
+    environment:
+      MYSQL_DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/${MYSQL_DATABASE}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build: .
+    image: grypsiarze-web:prod
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MYSQL_DATABASE_URL: ${MYSQL_DATABASE_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: no
+    command: ["node", "dist/src/server.js"]
+
+  bot:
+    build: .
+    image: grypsiarze-bot:prod
+    environment:
+      NODE_ENV: production
+      MYSQL_DATABASE_URL: ${MYSQL_DATABASE_URL}
+      TWITCH_USERNAME: ${TWITCH_USERNAME}
+      TWITCH_OAUTH_TOKEN: ${TWITCH_OAUTH_TOKEN}
+      CHANNEL_NAME: ${CHANNEL_NAME}
+    depends_on:
+      - db
+      - migrate
+    restart: no
+    command: ["node", "dist/src/bot.js"]
+
+volumes:
+  db-data:
