@@ -15,8 +15,7 @@ services:
       retries: 5
 
   migrate:
-    build: .
-    image: grypsiarze-migrate:prod
+    image: ghcr.io/zafchiel/gryps-image:latest
     command: ["node", "src/db/migrate.js"]
     environment:
       MYSQL_DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/${MYSQL_DATABASE}
@@ -26,8 +25,7 @@ services:
     restart: "no"
 
   web:
-    build: .
-    image: grypsiarze-web:prod
+    image: ghcr.io/zafchiel/gryps-image:latest
     ports:
       - "3000:3000"
     environment:
@@ -43,8 +41,7 @@ services:
     command: ["node", "dist/src/server.js"]
 
   bot:
-    build: .
-    image: grypsiarze-bot:prod
+    image: ghcr.io/zafchiel/gryps-image:latest
     environment:
       NODE_ENV: production
       MYSQL_DATABASE_URL: ${MYSQL_DATABASE_URL}
