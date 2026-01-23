@@ -13,6 +13,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: "unless-stopped"
 
   migrate:
     build: .
@@ -24,6 +25,8 @@ services:
       db:
         condition: service_healthy
     restart: "no"
+    networks:
+      - gryps-network
 
   web:
     build: .
@@ -39,8 +42,19 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    restart: no
+    restart: "unless-stopped"
     command: ["node", "dist/src/server.js"]
+    networks:
+      - proxy
+      - gryps-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.gryps-web.rule=Host(`gryps.home.movo.site`) || Host(`gryps.movo.site`)"
+      - "traefik.http.routers.gryps-web.middlewares=https-only@file"
+      - "traefik.http.routers.gryps-web.tls=true"
+      - "traefik.http.routers.gryps-web.service=gryps-web"
+      - "traefik.http.services.gryps-web.loadbalancer.server.port=3000"
 
   bot:
     build: .
@@ -54,8 +68,14 @@ services:
     depends_on:
       - db
       - migrate
-    restart: no
+    restart: "unless-stopped"
     command: ["node", "dist/src/bot.js"]
+    networks:
+      - gryps-network
 
 volumes:
   db-data:
+networks:
+  gryps-network:
+  proxy:
+    external: true
