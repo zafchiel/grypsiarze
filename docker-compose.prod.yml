@@ -17,18 +17,18 @@ services:
     networks:
       - gryps-network
 
-  migrate:
-    build: .
-    image: grypsiarze-migrate:prod
-    command: ["node", "src/db/migrate.js"]
-    environment:
-      MYSQL_DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/${MYSQL_DATABASE}
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-    networks:
-      - gryps-network
+  # migrate:
+  #   build: .
+  #   image: grypsiarze-migrate:prod
+  #   command: ["node", "src/db/migrate.js"]
+  #   environment:
+  #     MYSQL_DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/${MYSQL_DATABASE}
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   restart: "no"
+  #   networks:
+  #     - gryps-network
 
   web:
     build: .
