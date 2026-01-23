@@ -1,7 +1,9 @@
 services:
-  web_server:
-    build: .
-    container_name: web_server
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: web
     command: npm run dev:server
     ports:
       - "3000:3000"
@@ -12,12 +14,14 @@ services:
       - PORT=3000
       - MYSQL_DATABASE_URL=${MYSQL_DATABASE_URL}
     depends_on:
-      mysql_db:
+      db:
         condition: service_healthy
 
-  gryps_bot:
-    build: .
-    container_name: gryps_bot
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: bot
     command: npm run dev:bot
     restart: always
     volumes:
@@ -26,12 +30,12 @@ services:
     environment:
       - MYSQL_DATABASE_URL=${MYSQL_DATABASE_URL}
     depends_on:
-      mysql_db:
+      db:
         condition: service_healthy
 
-  mysql_db:
-    image: mysql:8.0
-    container_name: mysql_container
+  db:
+    image: mysql:8
+    container_name: db
     ports:
       - "3306:3306"
     environment:

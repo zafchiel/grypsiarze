@@ -7,8 +7,8 @@
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "node src/db/migrate.js",
-    "dev:server": "tsx src/server.ts",
-    "dev:bot": "npm run migrate && tsx src/bot.ts",
+    "dev:server": "tsx --watch src/server.ts",
+    "dev:bot": "npm run migrate && tsx --watch src/bot.ts",
     "start": "npm run migrate && npm run dev:server & npm run dev:bot",
     "test:validate": "node validate-test-setup.js",
     "build": "tsc"

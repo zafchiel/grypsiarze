@@ -1,0 +1,33 @@
+
+# ---------------------------------------
+# Stage 1: Build the application
+# ---------------------------------------
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# Remove devDependencies to save space
+# RUN npm prune --production
+
+# ---------------------------------------
+# Stage 2: Create the production image
+# ---------------------------------------
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Copy the "node_modules" from the builder stage (only prod deps remain)
+COPY --from=builder /app/node_modules ./node_modules
+# Copy the compiled JavaScript code
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/src/db/migrate.js ./src/db/migrate.js
+
+ENV NODE_ENV=production
+
+EXPOSE 3000
