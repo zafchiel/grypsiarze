@@ -69,7 +69,7 @@ services:
       CHANNEL_NAME: ${CHANNEL_NAME}
     depends_on:
       - db
-      - migrate
+      # - migrate
     restart: "unless-stopped"
     command: ["node", "dist/src/bot.js"]
     networks:
