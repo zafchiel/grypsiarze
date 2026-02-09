@@ -57,7 +57,7 @@ client.on("message", async (channel, userstate, message, self) => {
 // Listen for timeout events
 client.on("timeout", async (channel, username, reason, duration, userstate) => {
   try {
-    await insertZbrodniarze("timeout", channel, username, duration);
+    await insertZbrodniarze("timeout", username, duration);
     await incrementDailyStat("timeout");
   } catch (error) {
     logger.error(`Error handling timeout for ${username}:`, error);
@@ -67,7 +67,7 @@ client.on("timeout", async (channel, username, reason, duration, userstate) => {
 // Listen for ban events
 client.on("ban", async (channel, username, reason, userstate) => {
   try {
-    await insertZbrodniarze("ban", channel, username, 0);
+    await insertZbrodniarze("ban", username, 0);
     await incrementDailyStat("ban");
   } catch (error) {
     logger.error(`Error handling ban for ${username}:`, error);

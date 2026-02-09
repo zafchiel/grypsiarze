@@ -4,7 +4,6 @@ export const zbrodniarzeTable = mysqlTable("zbrodniarze", {
   id: int("id").primaryKey().autoincrement(),
   timestamp: timestamp("timestamp").defaultNow(),
   type: text("type").notNull(),
-  channel: text("channel").notNull(),
   username: text("username").notNull(),
   duration: int("duration").notNull(),
 });

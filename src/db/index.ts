@@ -116,13 +116,12 @@ export async function getDailyStats(days = 365) {
 
 export async function insertZbrodniarze(
   type: "timeout" | "ban",
-  channel: string,
   username: string,
   duration: number,
 ) {
   const result = await db
     .insert(zbrodniarzeTable)
-    .values({ type, channel, username, duration });
+    .values({ type, username, duration });
 
   return result;
 }
